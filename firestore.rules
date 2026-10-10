@@ -1,0 +1,38 @@
+// Publicar estas reglas desde la consola de Firebase, no desde GitHub Pages.
+// Los miembros se aprueban manualmente desde la consola: members/UID {role: "member"}.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function member() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'member';
+    }
+    match /members/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+    match /tips/{tipId} {
+      allow read: if member();
+      allow create: if member()
+        && request.resource.data.keys().hasOnly(['text', 'authorId', 'authorName', 'createdAt'])
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 3000
+        && request.resource.data.authorName is string
+        && request.resource.data.authorName.size() <= 100
+        && request.resource.data.createdAt == request.time;
+      allow update: if member()
+        && resource.data.authorId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 3000;
+      allow delete: if member() && resource.data.authorId == request.auth.uid;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
