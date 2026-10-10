@@ -1,0 +1,10 @@
+{
+  "name":"lap-ans-functions",
+  "private":true,
+  "engines":{"node":"20"},
+  "scripts":{"deploy":"firebase deploy --only functions"},
+  "dependencies":{
+    "firebase-admin":"^13.0.0",
+    "firebase-functions":"^6.0.0"
+  }
+}
